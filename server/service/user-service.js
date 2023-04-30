@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const uuid = require("uuid")
 
 const UserModel = require("../models/user-model");
+const TokenModel = require("../models/token-model");
 const MailService = require("./mail-service");
 const tokenService = require("./token-service");
 const UserDto = require("../dto/user-dto");
@@ -63,7 +64,7 @@ class UserService {
                 throw ApiError.UnauthorizedError() 
             }
             const userData = tokenService.validateRefreshToken(refreshToken);
-            const tokenData = tokenService.findOne({refreshToken});
+            const tokenData = await TokenModel.findOne({refreshToken});
             if(!userData || !tokenData){
                 throw ApiError.UnauthorizedError() 
             }

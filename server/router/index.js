@@ -10,9 +10,12 @@ body("email").isEmail(),
 body('password').isLength({min:3,max:30}),
 userController.registration)
 router.post("/login",userController.login)
+router.get("/users/me",authMiddleware,userController.getMe)
+
+
 router.post("/logout",userController.logout)
 router.get("/activate/:link",userController.activate);
 router.get('/refresh',userController.refresh)
-router.get('/users',authMiddleware,userController.getUsers);
+router.get('/getUsers',authMiddleware,userController.getUsers);
 
 module.exports = router;

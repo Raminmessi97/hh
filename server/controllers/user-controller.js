@@ -17,6 +17,7 @@ class UserController{
             })
             return res.json(userData);
         } catch (error) {
+            console.log('ddd',error);
             next(error)
         }
     }
@@ -79,6 +80,22 @@ class UserController{
             const users = await UserService.getUsers()
             res.json(users)
         } catch (error) {
+            next(error)
+        }
+    }
+
+
+    async getMe(req,res,next){
+        try {
+            console.log('re',req.user);
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    user:req.user
+                },
+            });
+        }catch (e) {
             next(error)
         }
     }
