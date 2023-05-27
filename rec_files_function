@@ -1,0 +1,59 @@
+def rec_from_file(**args):
+
+    f = open(args['disk'], 'rb')
+
+    if args['outdir']:
+        try:
+            os.makedirs(args['outdir'])
+        except OSError:
+            pass
+        os.chdir(args['outdir'])
+
+    # parse essential details of the MBR
+    if readat(f, 3, 8) != b'NTFS    ':
+        raise ValueError("Not an NTFS disk???")
+
+    bps, spc = struct.unpack('<HB', readat(f, 0xb, 3))
+    if args['sector_size']:
+        bps = args['sector_size']
+    if args['cluster_size']:
+        spc = args['cluster_size']
+    bpc = bps * spc
+
+    mft_clust, mftmirr_clust, clust_per_mft = struct.unpack('<QQB', readat(f, 0x30, 17))
+
+    print("Reading MFT", file=sys.stderr)
+    if args['mft']:
+        mftbytes = open('/home/ramin/Desktop/mft','rb').read()
+    else:
+        mftbytes = read_mft(f, bpc, mft_clust, clust_per_mft)
+
+    if args['save_mft']:
+        open('/home/ramin/Desktop/mft','wb').write(mftbytes)
+
+    mft = parse_mft(f, bpc, mftbytes)
+    for i, file in enumerate(mft):
+        try:
+            fn = file['FILE_NAME'][None]()[1]
+        except Exception as e:
+            continue
+
+        try:
+            fullpath = '/'.join(get_filepath(mft, i))
+        except Exception as e:
+            fullpath = '__ORPHANED__/' + fn
+
+        if not args['pattern']:
+            print(fullpath)
+            continue
+
+        for pat in args['pattern']:
+            pat = pat.lower().encode('utf8')
+            if fnmatch.fnmatch(fn.lower().encode('utf8'), pat) or fnmatch.fnmatch(fullpath.lower().encode('utf8'), pat):
+                print("Recovering", fullpath, end=' ')
+                try:
+                    save_file(file, fullpath)
+                except Exception as e:
+                    print("failed:", e)
+                else:
+                    print("Success!")
